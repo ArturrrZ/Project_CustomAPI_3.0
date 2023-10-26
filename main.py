@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 import random
+
 data= {
     'f_name':{'first_name': 'Artur',},
     'l_name':{'last_name': 'Ziianbaev',},
@@ -15,6 +16,10 @@ FACTS_ABOUT_ME=[
     "I have a younger brother. He is 10 years old",
     "I've read 5 books during the previous year",
     "I lived in Ohio for 18 months"
+]
+COMMENTS=[]
+YOU_CAN_CHANGE=[
+    {"item": "changeble item"},
 ]
 
 app=Flask(__name__)
@@ -54,9 +59,52 @@ def show_random_fact():
     response={
         "random_fact": random_fact
     }
-    return response
+    return jsonify(response), 200
+
+@app.route("/comment",methods=["POST"])
+def give_comment():
+    comment=request.get_json()
+    COMMENTS.append(comment)
+    print(COMMENTS)
+    return jsonify("You successfully added comment! Thank you!"), 201
 
 
+@app.route("/change/<int:index>",methods=['PATCH'])
+def change(index):
+
+    new_text=request.args.get("new_text")
+    print(f"List before change: {YOU_CAN_CHANGE}")
+    try:
+        item_wanted_to_change=YOU_CAN_CHANGE[index]
+        item_wanted_to_change['item']=new_text
+        print("Changed below")
+        print(YOU_CAN_CHANGE)
+        return jsonify("You successfully uploaded item")
+    except IndexError:
+        return jsonify({"error": "List Index out of range. Give me proper index"})
+
+@app.route("/add_item",methods=['POST'])
+def add_item():
+    new_text = request.get_json()
+    new_item = {"item": new_text}
+    YOU_CAN_CHANGE.append(new_item)
+    print("Changed below")
+    print(YOU_CAN_CHANGE)
+    return jsonify("You successfully added new item")
+
+
+@app.route("/delete/<int:index>",methods=['DELETE'])
+def delete_item(index):
+    api_key=request.args.get("api-key")
+    if api_key == "PASSWORD_SECRET":
+        try:
+            del YOU_CAN_CHANGE[index]
+            print(f"after change: {YOU_CAN_CHANGE}")
+            return jsonify("You successfully deleted item")
+        except IndexError:
+            return jsonify({"error": "List Index out of range. Give me proper index"})
+    else:
+        return jsonify('Wrong api-key')
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)
